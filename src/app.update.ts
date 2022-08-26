@@ -11,8 +11,12 @@ import {
 import { Telegraf } from 'telegraf';
 import { Message as MessageFromUser } from 'telegraf/typings/core/types/typegram';
 import { Context } from './commons/interface/context.interface';
+import {
+  actionButtons,
+  showTodoList,
+} from './commons/template/telegram.template';
 
-let _deleteTodoList: any;
+let _deletePrevTodoList: any;
 
 @Update()
 export class AppUpdate {
@@ -23,26 +27,30 @@ export class AppUpdate {
 
   @Start()
   async startBot(ctx: Context) {
-    await ctx.reply(
-      'Welcome!\n\nCreate a new todo',
-      this.appService.actionButtons(),
-    );
+    await ctx.reply('Welcome!\n\nCreate a new todo', actionButtons());
   }
 
   @Hears('Todo list 📃')
   async getList(ctx: Context) {
     const todoList = await this.appService.getTodoList();
-    if (!todoList.length) await ctx.reply('No todo list available');
-    _deleteTodoList = await ctx.replyWithHTML(
-      this.appService.showList('Todo list', todoList),
-    );
-    await ctx.deleteMessage();
+    if (!todoList.length) {
+      await ctx.reply('No todo list available');
+    } else {
+      _deletePrevTodoList = await ctx.replyWithHTML(
+        showTodoList('Todo list', todoList),
+      );
+      await ctx.deleteMessage();
+      ctx.session.type = 'create';
+    }
   }
 
   @Hears('Edit todo 📝')
   async editList(ctx: Context) {
     ctx.session.type = 'edit';
     await ctx.deleteMessage();
+    await ctx.reply(
+      'Insert new name of todos:\n\n\tExample: 1. Milk\n\nPay attention of . ',
+    );
   }
 
   @Hears('Remove todo ❌')
@@ -54,8 +62,21 @@ export class AppUpdate {
 
   @Hears('Task completed ✅')
   async completeTodo(ctx: Context) {
-    ctx.session.type = 'done';
     await ctx.deleteMessage();
+    ctx.session.type = 'done';
+    await ctx.reply('Insert number of todos:');
+  }
+
+  @Hears('Remove all todo ❌')
+  async removeAllTodos(ctx: Context) {
+    await ctx.deleteMessage();
+    const dropAll = await this.appService.removeAllTodos();
+    if (!dropAll) {
+      await ctx.reply("Can't remove all todos");
+    } else {
+      ctx.session.type = 'create';
+      await ctx.reply('All todos removed!');
+    }
   }
 
   @On('text')
@@ -63,27 +84,43 @@ export class AppUpdate {
     @Ctx() ctx: Context,
     @Message() msg: MessageFromUser.TextMessage,
   ) {
-    const { message_id, from, date, text } = msg;
-
     switch (ctx.session.type) {
       case 'edit':
-        console.log('edit', text);
-        ctx.session.type = 'create';
+        const edit = await this.appService.editTodo(msg.text);
+        if (!edit) {
+          await ctx.reply('Unable to update todo ⛔');
+        } else {
+          ctx.session.type = 'create';
+          await this.getList(ctx);
+        }
+
         break;
       case 'delete':
-        const deleteTodo = await this.appService.deleteTodo(text);
-        if (!deleteTodo) await ctx.reply('Please insert a number value');
-        this.getList(ctx);
-        ctx.session.type = 'create';
+        const deleteTodo = await this.appService.deleteTodo(msg.text);
+        if (!deleteTodo) {
+          await ctx.reply('Please insert a number value');
+        } else {
+          await this.getList(ctx);
+          ctx.session.type = 'create';
+        }
         break;
       case 'done':
-        console.log('done', text);
         ctx.session.type = 'create';
+        const complete = await this.appService.completeTodo(msg.text);
+        if (!complete) {
+          await ctx.reply('Cannot complete todos!');
+        } else {
+          await this.getList(ctx);
+        }
+
+        break;
+
+      case 'create':
+        await this.appService.createTodo(msg);
+        await this.getList(ctx);
+
         break;
       default:
-        await this.appService.createTodo(msg);
-        this.getList(ctx);
-
         break;
     }
   }
