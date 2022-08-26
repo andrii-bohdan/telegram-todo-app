@@ -9,3 +9,12 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model TodoApp {
+  id          Int      @id @default(autoincrement())
+  description String
+  author      String?
+  completed   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now())
+}

@@ -10,10 +10,9 @@ import {
 } from 'nestjs-telegraf';
 import { Telegraf } from 'telegraf';
 import { Message as MessageFromUser } from 'telegraf/typings/core/types/typegram';
-import { Context, List } from './interface/index.interface';
+import { Context } from './commons/interface/context.interface';
 
-const todoList: Array<List> = [];
-let _hearsTemoraryMessage: any;
+let _deleteTodoList: any;
 
 @Update()
 export class AppUpdate {
@@ -24,14 +23,20 @@ export class AppUpdate {
 
   @Start()
   async startBot(ctx: Context) {
-    await ctx.reply('Welcome!');
-    await ctx.reply('Choose your action? ', this.appService.actionButtons());
+    await ctx.reply(
+      'Welcome!\n\nCreate a new todo',
+      this.appService.actionButtons(),
+    );
   }
 
   @Hears('Todo list 📃')
   async getList(ctx: Context) {
+    const todoList = await this.appService.getTodoList();
+    if (!todoList.length) await ctx.reply('No todo list available');
+    _deleteTodoList = await ctx.replyWithHTML(
+      this.appService.showList('Todo list', todoList),
+    );
     await ctx.deleteMessage();
-    await ctx.replyWithHTML(this.appService.showList('Todos', todoList));
   }
 
   @Hears('Edit todo 📝')
@@ -44,7 +49,7 @@ export class AppUpdate {
   async deleteList(ctx: Context) {
     ctx.session.type = 'delete';
     await ctx.deleteMessage();
-    _hearsTemoraryMessage = await ctx.reply('Type whitch id will be removed:');
+    await ctx.reply('Type number to delete todo');
   }
 
   @Hears('Task completed ✅')
@@ -66,11 +71,9 @@ export class AppUpdate {
         ctx.session.type = 'create';
         break;
       case 'delete':
-        await ctx.deleteMessage(Number(_hearsTemoraryMessage.message_id));
-        await ctx.deleteMessage();
-        const removedTodo = this.appService.deleteTodo(todoList, Number(text));
-
-        await ctx.replyWithHTML(this.appService.showList('Todos', removedTodo));
+        const deleteTodo = await this.appService.deleteTodo(text);
+        if (!deleteTodo) await ctx.reply('Please insert a number value');
+        this.getList(ctx);
         ctx.session.type = 'create';
         break;
       case 'done':
@@ -78,23 +81,9 @@ export class AppUpdate {
         ctx.session.type = 'create';
         break;
       default:
-        todoList.push({
-          id: message_id,
-          description: text,
-          author: `${from.first_name} ${from.last_name}`,
-          isCompleted: false,
-          date: new Date().toISOString(),
-        });
-        await ctx.deleteMessage();
-        _hearsTemoraryMessage = await ctx.replyWithHTML(
-          this.appService.showList('Todo added', todoList),
-        );
+        await this.appService.createTodo(msg);
+        this.getList(ctx);
 
-        if (_hearsTemoraryMessage.message_id) {
-          setTimeout(async () => {
-            await ctx.deleteMessage(_hearsTemoraryMessage.message_id);
-          }, 500);
-        }
         break;
     }
   }

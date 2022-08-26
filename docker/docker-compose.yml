@@ -1,0 +1,22 @@
+version: '3.3'
+services:
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file: ../.env
+    environment:
+      MYSQL_DATABASE: todo
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: root
+      MYSQL_PASSWORD: deploy
+    healthcheck:
+      test: mysql db --user=${MYSQL_USER} --password='${MYSQL_PASSWORD}' --silent --execute "SELECT 1;"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - 3306:3306
+    expose:
+      - 3306

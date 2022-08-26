@@ -1,8 +1,8 @@
 {
-  "name": "todo-telegram",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "telegram-todo-app",
+  "version": "0.0.2",
+  "description": "Telegram todo-app realised with Nest JS",
+  "author": "Andriy Bohdan",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -25,6 +25,7 @@
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^8.0.0",
     "@nestjs/platform-express": "^8.0.0",
+    "@prisma/client": "^4.2.1",
     "@types/dotenv": "^8.2.0",
     "dotenv": "^16.0.1",
     "nestjs-telegraf": "^2.6.1",
