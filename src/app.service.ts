@@ -1,50 +1,11 @@
+import { isNumber } from './commons/utils/isNumber.utils';
 import { Injectable } from '@nestjs/common';
 import { TodoApp } from '@prisma/client';
-import { Markup } from 'telegraf';
 import { PrismaService } from './commons/prisma/prisma.service';
 import { Message as MessageFromUser } from 'telegraf/typings/core/types/typegram';
-
 @Injectable()
 export class AppService {
   constructor(private prisma: PrismaService) {}
-  actionButtons() {
-    return Markup.keyboard(
-      [
-        Markup.button.callback('Todo list 📃', 'list'),
-        Markup.button.callback('Edit todo 📝', 'edit'),
-        Markup.button.callback('Remove todo ❌', 'remove'),
-        Markup.button.callback('Task completed ✅', 'done'),
-      ],
-      {
-        columns: 2,
-      },
-    );
-  }
-
-  showList(title: string | null, todo: TodoApp[]): string {
-    return `<b>${title}</b>\n\n\t${todo
-      .map(
-        (list) =>
-          `<b>${Number(list.id)}.</b> <i>${list.author}</i> ${
-            list.completed ? '✅' : '⏱'
-          } \n\n\t - ${list.description}\r\n\n`,
-      )
-      .join(' ')}`;
-  }
-
-  async deleteTodo(id: string): Promise<TodoApp> {
-    const pattern: RegExp = /^\d+\.?\d*$/;
-    if (!pattern.test(id)) {
-      throw new Error('Please type number to delete todo');
-    }
-
-    const drop = await this.prisma.todoApp.delete({
-      where: {
-        id: Number(id),
-      },
-    });
-    return drop;
-  }
 
   async getTodoList(): Promise<TodoApp[]> {
     return await this.prisma.todoApp.findMany();
@@ -65,5 +26,41 @@ export class AppService {
     }
 
     return storeTodo;
+  }
+
+  async deleteTodo(id: string): Promise<TodoApp> {
+    const drop = await this.prisma.todoApp.delete({
+      where: {
+        id: isNumber(id),
+      },
+    });
+    return drop;
+  }
+
+  async completeTodo(id: string): Promise<TodoApp> {
+    return await this.prisma.todoApp.update({
+      where: {
+        id: isNumber(id),
+      },
+      data: {
+        completed: true,
+      },
+    });
+  }
+
+  async removeAllTodos() {
+    return await this.prisma.todoApp.deleteMany({});
+  }
+
+  async editTodo(message: string): Promise<TodoApp> {
+    const [todoId, description] = message.trim().split('. ');
+    return await this.prisma.todoApp.update({
+      where: {
+        id: isNumber(todoId),
+      },
+      data: {
+        description,
+      },
+    });
   }
 }
