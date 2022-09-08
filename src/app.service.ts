@@ -1,7 +1,7 @@
 import { Context } from './commons/interface/context.interface';
 import { isNumber } from './commons/utils/isNumber.utils';
 import { Injectable } from '@nestjs/common';
-import { Todo } from '@prisma/client';
+import { Todo, User } from '@prisma/client';
 import { PrismaService } from './commons/prisma/prisma.service';
 import { Message as MessageFromUser } from 'telegraf/typings/core/types/typegram';
 import * as moment from 'moment';
@@ -21,19 +21,10 @@ export class AppService {
   }
 
   async createTodo(todo: MessageFromUser.TextMessage): Promise<any> {
-    const { message_id, from, text } = todo;
-    const storeTodo = await this.prisma.todo.create({
-      data: {
-        id: message_id,
-        description: text,
-        author: `${from.first_name} ${from.last_name}`,
-      },
-    });
-
+    const storeTodo = await this._upsertTodoUser(todo);
     if (!storeTodo) {
       throw new Error("Can't store todo");
     }
-
     return storeTodo;
   }
 
@@ -69,6 +60,37 @@ export class AppService {
       },
       data: {
         description,
+      },
+    });
+  }
+
+  async _upsertTodoUser(todo: MessageFromUser.TextMessage) {
+    return await this.prisma.user.upsert({
+      where: { user_id: todo.from.id },
+      update: {
+        ...todo.from,
+        todos: {
+          create: [
+            {
+              message_id: todo.message_id,
+              description: todo.text,
+              completed: false,
+            },
+          ],
+        },
+      },
+      create: {
+        user_id: todo.from.id,
+        ...(todo.from as User),
+        todos: {
+          create: [
+            {
+              message_id: todo.message_id,
+              description: todo.text,
+              completed: false,
+            },
+          ],
+        },
       },
     });
   }
