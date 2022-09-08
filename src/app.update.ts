@@ -27,7 +27,8 @@ export class AppUpdate {
 
   @Start()
   async startBot(ctx: Context) {
-    await ctx.reply('Welcome!\n\nCreate a new todo', actionButtons());
+    const startMessage = this.appService.startBot(ctx);
+    await ctx.reply(startMessage, actionButtons());
   }
 
   @Hears('Todo list 📃')
