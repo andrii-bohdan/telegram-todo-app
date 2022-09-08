@@ -1,5 +1,5 @@
 import { Markup } from 'telegraf';
-import { TodoApp } from '@prisma/client';
+import { Todo } from '@prisma/client';
 import * as moment from 'moment';
 
 const actionButtons = () => {
@@ -17,7 +17,7 @@ const actionButtons = () => {
   );
 };
 
-const showTodoList = (title: string | null, todo: TodoApp[]): string => {
+const showTodoList = (title: string | null, todo: Todo[]): string => {
   const header = `<code>${title}</code>`;
   const space = {
     xs: '\t\t\t\t',

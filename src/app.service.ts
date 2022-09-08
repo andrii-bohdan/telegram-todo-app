@@ -1,19 +1,28 @@
+import { Context } from './commons/interface/context.interface';
 import { isNumber } from './commons/utils/isNumber.utils';
 import { Injectable } from '@nestjs/common';
-import { TodoApp } from '@prisma/client';
+import { Todo } from '@prisma/client';
 import { PrismaService } from './commons/prisma/prisma.service';
 import { Message as MessageFromUser } from 'telegraf/typings/core/types/typegram';
+import * as moment from 'moment';
+import { greetings } from './commons/utils/greetings.utils';
 @Injectable()
 export class AppService {
   constructor(private prisma: PrismaService) {}
 
-  async getTodoList(): Promise<TodoApp[]> {
-    return await this.prisma.todoApp.findMany();
+  public startBot(ctx: Context): string {
+    const currentTime = moment().format('HH');
+    const greeting = greetings(currentTime);
+    return `${greeting} ${ctx.from.first_name} ${ctx.from.last_name}`;
+  }
+
+  async getTodoList(): Promise<Todo[]> {
+    return await this.prisma.todo.findMany();
   }
 
   async createTodo(todo: MessageFromUser.TextMessage): Promise<any> {
-    const { message_id, from, date, text } = todo;
-    const storeTodo = await this.prisma.todoApp.create({
+    const { message_id, from, text } = todo;
+    const storeTodo = await this.prisma.todo.create({
       data: {
         id: message_id,
         description: text,
@@ -28,8 +37,8 @@ export class AppService {
     return storeTodo;
   }
 
-  async deleteTodo(id: string): Promise<TodoApp> {
-    const drop = await this.prisma.todoApp.delete({
+  async deleteTodo(id: string): Promise<Todo> {
+    const drop = await this.prisma.todo.delete({
       where: {
         id: isNumber(id),
       },
@@ -37,8 +46,8 @@ export class AppService {
     return drop;
   }
 
-  async completeTodo(id: string): Promise<TodoApp> {
-    return await this.prisma.todoApp.update({
+  async completeTodo(id: string): Promise<Todo> {
+    return await this.prisma.todo.update({
       where: {
         id: isNumber(id),
       },
@@ -49,12 +58,12 @@ export class AppService {
   }
 
   async removeAllTodos() {
-    return await this.prisma.todoApp.deleteMany({});
+    return await this.prisma.todo.deleteMany({});
   }
 
-  async editTodo(message: string): Promise<TodoApp> {
+  async editTodo(message: string): Promise<Todo> {
     const [todoId, description] = message.trim().split('. ');
-    return await this.prisma.todoApp.update({
+    return await this.prisma.todo.update({
       where: {
         id: isNumber(todoId),
       },
