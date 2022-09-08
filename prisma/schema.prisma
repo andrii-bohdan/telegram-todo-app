@@ -10,10 +10,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            Int      @id @default(autoincrement())
+  user_id       Int      @unique
+  is_bot        Boolean  @default(false)
+  first_name    String?
+  last_name     String?
+  username      String
+  language_code String?
+  todos         Todo[]
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now())
+}
+
 model Todo {
   id          Int      @id @default(autoincrement())
+  message_id  Int
   description String
-  author      String?
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    Int
   completed   Boolean  @default(false)
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now())
