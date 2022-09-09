@@ -29,7 +29,7 @@ const showTodoList = (title: string | null, todo: Todo[]): string => {
   const template = `${header}\n\n\t${todo
     .map(
       (list) =>
-        `<code>${Number(list.id)}</code>${space.xs}<b>Andriy</b>${
+        `<code>${Number(list.id)}</code>${space.xs}<b>Andriy Bohdan</b>${
           space.xl
         }<code>${list.completed ? '✅' : '⏱'}</code>${newline}${
           list.completed
