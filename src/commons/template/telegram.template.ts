@@ -1,6 +1,11 @@
 import { Markup } from 'telegraf';
-import { Todo } from '@prisma/client';
+import { Todo, User } from '@prisma/client';
 import * as moment from 'moment';
+
+type TodoUserMapp = {
+  user: User;
+  todoList: Todo[];
+};
 
 const actionButtons = () => {
   return Markup.keyboard(
@@ -17,7 +22,7 @@ const actionButtons = () => {
   );
 };
 
-const showTodoList = (title: string | null, todo: Todo[]): string => {
+const showTodoList = (title: string | null, data: TodoUserMapp): string => {
   const header = `<code>${title}</code>`;
   const space = {
     xs: '\t\t\t\t',
@@ -26,12 +31,12 @@ const showTodoList = (title: string | null, todo: Todo[]): string => {
     xl: '\t\t\t\t\t\t\t\t\t\t\t',
   };
   const newline = '\n\n\t';
-  const template = `${header}\n\n\t${todo
+  const template = `${header}\n\n\t${data.todoList
     .map(
       (list) =>
-        `<code>${Number(list.id)}</code>${space.xs}<b>Andriy Bohdan</b>${
-          space.xl
-        }<code>${list.completed ? '✅' : '⏱'}</code>${newline}${
+        `<code>${Number(list.id)}</code>${space.xs}<b>${data.user.first_name} ${
+          data.user.last_name
+        }</b>${space.xl}<code>${list.completed ? '✅' : '⏱'}</code>${newline}${
           list.completed
             ? `<s>${list.description}</s>`
             : `<pre>${list.description}</pre>`
