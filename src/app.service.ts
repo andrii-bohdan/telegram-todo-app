@@ -64,6 +64,14 @@ export class AppService {
     });
   }
 
+  async findUserById(id: number) {
+    return await this.prisma.user.findFirst({
+      where: {
+        id,
+      },
+    });
+  }
+
   async _upsertTodoUser(todo: MessageFromUser.TextMessage) {
     return await this.prisma.user.upsert({
       where: { user_id: todo.from.id },
