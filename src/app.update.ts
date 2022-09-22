@@ -15,8 +15,7 @@ import {
   actionButtons,
   showTodoList,
 } from './commons/template/telegram.template';
-
-let _deletePrevTodoList: any;
+import { autoCleanReply } from './commons/utils/autoCleanReply';
 
 @Update()
 export class AppUpdate {
@@ -34,12 +33,11 @@ export class AppUpdate {
   @Hears('Todo list 📃')
   async getList(ctx: Context) {
     const todoList = await this.appService.getTodoList();
+    const user = await this.appService.findUserById(todoList[0].authorId);
     if (!todoList.length) {
       await ctx.reply('No todo list available');
     } else {
-      _deletePrevTodoList = await ctx.replyWithHTML(
-        showTodoList('Todo list', todoList),
-      );
+      await ctx.replyWithHTML(showTodoList('Todo list', { user, todoList }));
       await ctx.deleteMessage();
       ctx.session.type = 'create';
     }
@@ -70,14 +68,13 @@ export class AppUpdate {
 
   @Hears('Remove all todo ❌')
   async removeAllTodos(ctx: Context) {
+    ctx.session.type = 'create';
     await ctx.deleteMessage();
     const dropAll = await this.appService.removeAllTodos();
     if (!dropAll) {
       await ctx.reply("Can't remove all todos");
-    } else {
-      ctx.session.type = 'create';
-      await ctx.reply('All todos removed!');
     }
+    await autoCleanReply(ctx, 'All todos was removed successfully');
   }
 
   @On('text')
@@ -87,39 +84,33 @@ export class AppUpdate {
   ) {
     switch (ctx.session.type) {
       case 'edit':
+        ctx.session.type = 'create';
         const edit = await this.appService.editTodo(msg.text);
         if (!edit) {
           await ctx.reply('Unable to update todo ⛔');
-        } else {
-          ctx.session.type = 'create';
-          await this.getList(ctx);
         }
-
+        await autoCleanReply(ctx, 'Todo was updated succesfully');
         break;
       case 'delete':
+        ctx.session.type = 'create';
         const deleteTodo = await this.appService.deleteTodo(msg.text);
         if (!deleteTodo) {
           await ctx.reply('Please insert a number value');
-        } else {
-          await this.getList(ctx);
-          ctx.session.type = 'create';
         }
+        await autoCleanReply(ctx, 'Todos was deleted succesfully');
         break;
       case 'done':
         ctx.session.type = 'create';
         const complete = await this.appService.completeTodo(msg.text);
         if (!complete) {
           await ctx.reply('Cannot complete todos!');
-        } else {
-          await this.getList(ctx);
         }
-
+        await autoCleanReply(ctx, 'Todos succesfully done');
         break;
 
       case 'create':
         await this.appService.createTodo(msg);
-        await this.getList(ctx);
-
+        await autoCleanReply(ctx, 'Todo succesfully created');
         break;
       default:
         break;
