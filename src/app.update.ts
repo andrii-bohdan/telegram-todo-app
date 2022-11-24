@@ -47,9 +47,7 @@ export class AppUpdate {
   async editList(ctx: Context) {
     ctx.session.type = 'edit';
     await ctx.deleteMessage();
-    await ctx.reply(
-      'Insert new name of todos:\n\n\tExample: 1. Milk\n\nPay attention of . ',
-    );
+    await ctx.reply('Edit todo:\n\n\tExample: 1. Milk');
   }
 
   @Hears('Remove todo ❌')
@@ -63,7 +61,7 @@ export class AppUpdate {
   async completeTodo(ctx: Context) {
     await ctx.deleteMessage();
     ctx.session.type = 'done';
-    await ctx.reply('Insert number of todos:');
+    await ctx.reply('Insert number of todo:');
   }
 
   @Hears('Remove all todo ❌')
@@ -72,7 +70,7 @@ export class AppUpdate {
     await ctx.deleteMessage();
     const dropAll = await this.appService.removeAllTodos();
     if (!dropAll) {
-      await ctx.reply("Can't remove all todos");
+      await ctx.reply('Unable remove all todos');
     }
     await autoCleanReply(ctx, 'All todos was removed successfully');
   }
@@ -97,7 +95,7 @@ export class AppUpdate {
         if (!deleteTodo) {
           await ctx.reply('Please insert a number value');
         }
-        await autoCleanReply(ctx, 'Todos was deleted succesfully');
+        await autoCleanReply(ctx, 'Todos was deleted successfully');
         break;
       case 'done':
         ctx.session.type = 'create';
@@ -105,12 +103,12 @@ export class AppUpdate {
         if (!complete) {
           await ctx.reply('Cannot complete todos!');
         }
-        await autoCleanReply(ctx, 'Todos succesfully done');
+        await autoCleanReply(ctx, 'Todo is completed');
         break;
 
       case 'create':
         await this.appService.createTodo(msg);
-        await autoCleanReply(ctx, 'Todo succesfully created');
+        await autoCleanReply(ctx, 'Todo successfully created');
         break;
       default:
         break;
