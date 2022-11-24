@@ -23,7 +23,7 @@ export class AppService {
   async createTodo(todo: MessageFromUser.TextMessage): Promise<any> {
     const storeTodo = await this._upsertTodoUser(todo);
     if (!storeTodo) {
-      throw new Error("Can't store todo");
+      throw new Error("Unable to create todo!");
     }
     return storeTodo;
   }
